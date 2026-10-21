@@ -11,9 +11,34 @@ import React, {
 
 const STORAGE_KEY = "flagged-episodes";
 
-function saveToStorage(s: Set<number>) {
+export function storageKeyFor(repoId?: string): string {
+  return repoId ? `${STORAGE_KEY}:${repoId}` : STORAGE_KEY;
+}
+
+export function getFlaggedEpisodesForRepo(repoId: string): number[] {
+  if (typeof window === "undefined") return [];
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify([...s]));
+    const raw =
+      localStorage.getItem(storageKeyFor(repoId)) ??
+      sessionStorage.getItem(storageKeyFor(repoId));
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter((x): x is number => typeof x === "number")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveToStorage(s: Set<number>, repoId?: string) {
+  try {
+    const serialized = JSON.stringify([...s]);
+    const key = storageKeyFor(repoId);
+    sessionStorage.setItem(key, serialized);
+    if (repoId) {
+      localStorage.setItem(key, serialized);
+    }
   } catch {
     /* ignore */
   }
@@ -42,28 +67,35 @@ export function useFlaggedEpisodes() {
 }
 
 export const FlaggedEpisodesProvider: React.FC<{
+  repoId?: string;
   children: React.ReactNode;
-}> = ({ children }) => {
+}> = ({ repoId, children }) => {
   const [flagged, setFlagged] = useState<Set<number>>(new Set());
-  const [hydrated, setHydrated] = useState(false);
+  const [hydratedKey, setHydratedKey] = useState<string | null>(null);
+  const currentKey = storageKeyFor(repoId);
+  const hydrated = hydratedKey === currentKey;
 
-  // Hydrate from sessionStorage after mount (avoids SSR/client mismatch)
+  // Hydrate from localStorage/sessionStorage after mount (avoids SSR/client mismatch)
   useEffect(() => {
     try {
-      const raw = sessionStorage.getItem(STORAGE_KEY);
+      const key = storageKeyFor(repoId);
+      const raw =
+        (repoId ? localStorage.getItem(key) : null) ??
+        sessionStorage.getItem(key);
       if (raw) setFlagged(new Set(JSON.parse(raw) as number[]));
+      else setFlagged(new Set());
     } catch {
       /* ignore */
     }
-    setHydrated(true);
-  }, []);
+    setHydratedKey(storageKeyFor(repoId));
+  }, [repoId]);
 
   // Only persist after hydration so the initial empty set doesn't
   // overwrite stored flags when the component remounts.
   useEffect(() => {
     if (!hydrated) return;
-    saveToStorage(flagged);
-  }, [flagged, hydrated]);
+    saveToStorage(flagged, repoId);
+  }, [flagged, hydrated, repoId]);
 
   const toggle = useCallback((id: number) => {
     setFlagged((prev) => {

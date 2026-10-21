@@ -362,7 +362,7 @@ export default function EpisodeViewer({
 
   return (
     <TimeProvider duration={data!.duration}>
-      <FlaggedEpisodesProvider>
+      <FlaggedEpisodesProvider repoId={data!.datasetInfo.repoId}>
         <AnnotationsProvider>
           <EpisodeBootstrap data={data!} />
           <EpisodeViewerInner data={data!} org={org} dataset={dataset} />
