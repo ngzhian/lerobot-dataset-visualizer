@@ -305,6 +305,10 @@ export const SimpleVideosPlayer = ({
 
       video.addEventListener("timeupdate", handleTimeUpdate);
       video.addEventListener("error", handleError);
+      video.addEventListener("error", checkReady, {
+        once: true,
+        capture: true,
+      });
       if (handlePlay) video.addEventListener("play", handlePlay);
       if (handleEnded) video.addEventListener("ended", handleEnded);
 
@@ -331,6 +335,7 @@ export const SimpleVideosPlayer = ({
         clearTimeout(reloadTimer);
         video.removeEventListener("error", handleError);
         video.removeEventListener("timeupdate", handleTimeUpdate);
+        video.removeEventListener("error", checkReady, { capture: true });
         if (handlePlay) video.removeEventListener("play", handlePlay);
         if (handleLoadedData)
           video.removeEventListener("loadeddata", handleLoadedData);
