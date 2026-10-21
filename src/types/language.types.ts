@@ -41,6 +41,7 @@ export interface LanguageAtom {
   // null is reserved for tool-call-only atoms (speech).
   style: LanguageStyle | null;
   timestamp: number;
+  end_timestamp?: number;
   /**
    * `observation.images.*` feature key when this atom is grounded against a
    * specific camera view (`vqa`, `trace`). `null` for camera-agnostic atoms

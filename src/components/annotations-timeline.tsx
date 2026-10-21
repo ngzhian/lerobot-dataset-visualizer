@@ -181,7 +181,11 @@ export const AnnotationsTimeline: React.FC<Props> = ({ duration }) => {
     subWithIdx.forEach(({ a, i }, k) => {
       const start = a.timestamp;
       const end =
-        k + 1 < subWithIdx.length ? subWithIdx[k + 1].a.timestamp : duration;
+        typeof a.end_timestamp === "number"
+          ? a.end_timestamp
+          : k + 1 < subWithIdx.length
+            ? subWithIdx[k + 1].a.timestamp
+            : duration;
       subtask.push({
         kind: "span",
         start,
@@ -539,10 +543,22 @@ export const AnnotationsTimeline: React.FC<Props> = ({ duration }) => {
                       {/* Editable subtask spans (resize + drag-to-create) */}
                       {tk.render === "span-edit" &&
                         lanes.subtask.map((s, k) => {
-                          const left = (s.start / duration) * 100;
-                          const width = Math.max(
-                            0.3,
-                            ((s.end - s.start) / duration) * 100,
+                          const safeDur = Math.max(duration, 0.001);
+                          const clampedStart = Math.max(
+                            0,
+                            Math.min(s.start, safeDur),
+                          );
+                          const clampedEnd = Math.max(
+                            clampedStart,
+                            Math.min(s.end, safeDur),
+                          );
+                          const left = (clampedStart / safeDur) * 100;
+                          const width = Math.min(
+                            100 - left,
+                            Math.max(
+                              0.3,
+                              ((clampedEnd - clampedStart) / safeDur) * 100,
+                            ),
                           );
                           return (
                             <div
@@ -655,10 +671,22 @@ export const AnnotationsTimeline: React.FC<Props> = ({ duration }) => {
                             atomIdx: number;
                           }>
                         ).map((s, k) => {
-                          const left = (s.start / duration) * 100;
-                          const width = Math.max(
-                            0.3,
-                            ((s.end - s.start) / duration) * 100,
+                          const safeDur = Math.max(duration, 0.001);
+                          const clampedStart = Math.max(
+                            0,
+                            Math.min(s.start, safeDur),
+                          );
+                          const clampedEnd = Math.max(
+                            clampedStart,
+                            Math.min(s.end, safeDur),
+                          );
+                          const left = (clampedStart / safeDur) * 100;
+                          const width = Math.min(
+                            100 - left,
+                            Math.max(
+                              0.3,
+                              ((clampedEnd - clampedStart) / safeDur) * 100,
+                            ),
                           );
                           return (
                             <div
@@ -706,7 +734,9 @@ export const AnnotationsTimeline: React.FC<Props> = ({ duration }) => {
                             subtype?: string;
                           }>
                         ).map((m, i) => {
-                          const left = (m.t / duration) * 100;
+                          const safeDur = Math.max(duration, 0.001);
+                          const clampedT = Math.max(0, Math.min(m.t, safeDur));
+                          const left = (clampedT / safeDur) * 100;
                           return (
                             <div
                               key={i}
